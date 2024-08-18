@@ -518,3 +518,93 @@ Here's a simple analogy:
 
 ObjectRefs (or futures) are not the Ray Objects themselves, but rather references to Ray Objects. This distinction is crucial for understanding how Ray manages data in a distributed environment.
 
+### `ray.put()`
+
+Now, let's break down what `ray.put()` does and why it's useful:
+
+1. Purpose of ray.put():
+   - It explicitly puts an object into Ray's object store.
+   - Returns an ObjectRef (a reference to the stored object).
+
+2. When to use ray.put():
+   - When you have data you want to share across multiple tasks or actors.
+   - For large objects that you'll use multiple times, to avoid repeated serialization.
+
+Example 1: Simple Python object
+   - We store a simple list using `ray.put()`.
+   - We get an ObjectRef back, which we can use to retrieve the data later.
+   ```python
+   # Example 1: Storing a simple Python object
+    data = [1, 2, 3, 4, 5]
+    data_ref = ray.put(data)
+    print("ObjectRef for data:", data_ref)
+    retrieved_data = ray.get(data_ref)
+    print("Retrieved data:", retrieved_data)
+   ```
+
+   Example 2: Large NumPy array
+   - We store a large NumPy array.
+   - This is particularly useful for big data that you don't want to keep copying.
+```python
+     # Example 2: Storing a large NumPy array
+    large_array = np.random.rand(1000000)
+    array_ref = ray.put(large_array)
+    print("ObjectRef for large array:", array_ref)
+    retrieved_array = ray.get(array_ref)
+    print("Shape of retrieved array:", retrieved_array.shape)
+```
+
+   Example 3: Using in a remote function
+   - We pass the ObjectRef to a remote function.
+   - The function can then retrieve the data using `ray.get()`.
+```python
+    import ray
+    
+    ray.init()
+    
+    # Define the remote function
+    @ray.remote
+    def process_data(data):
+        # No need to use ray.get() here, 'data' is already the actual data
+        return sum(data)
+    
+    # Create some data
+    data = [1, 2, 3, 4, 5]
+    
+    # Put the data in the object store and get an ObjectRef
+    data_ref = ray.put(data)
+    
+    # Call the remote function with the ObjectRef
+    result_ref = process_data.remote(data_ref)
+    
+    # Get the result
+    result = ray.get(result_ref)
+    print("Sum of data:", result)
+    
+    ray.shutdown()
+```
+**Key points to remember:**
+
+- Use ray.put() to store data in Ray's object store. This returns an ObjectRef.
+- Pass this ObjectRef to remote functions.
+- Inside remote functions, you receive the actual data, not the ObjectRef. So you don't need to use ray.get() there.
+- Use ray.get() only when you want to retrieve results from a remote function call.
+
+**This pattern ensures that:**
+
+- Data is properly stored in Ray's object store.
+- Remote functions can efficiently access the data.
+- You're working with ObjectRefs when appropriate.
+
+5. Benefits of using ray.put():
+   - Efficiency: Avoid repeatedly serializing large objects.
+   - Sharing: Easy to share data across multiple tasks or actors.
+   - Memory management: Ray manages the object's lifecycle in the distributed setting.
+
+6. Things to remember:
+   - Objects stored with `ray.put()` are immutable.
+   - Ray will automatically garbage collect objects when they're no longer needed.
+
+By using `ray.put()`, you're explicitly telling Ray to manage this data in its object store, which can lead to more efficient distributed computations, especially when dealing with large datasets or objects that are used multiple times.
+
+

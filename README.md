@@ -467,3 +467,54 @@ result = ray.get(use_counter.remote(counter))
 2. Use actors for maintaining state, not for one-off computations.
 3. Be mindful of the single-threaded nature of actors when designing your system.
 4. Use `ray.get()` judiciously to avoid blocking unnecessarily.
+
+
+# Ray Objects
+
+Ray objects are units of data stored in Ray's distributed object store. They represent the actual values or results of computations in a Ray system. These objects can be any Python data structure or object that can be serialized (converted to a format that can be stored or transmitted).
+
+### Key characteristics of Ray objects:
+
+1. Storage: They are stored in Ray's distributed object store, which spans across the memory of all nodes in a Ray cluster.
+
+2. Immutability: Once created, Ray objects are immutable (cannot be changed).
+
+3. Reference: They are accessed via ObjectRefs (also known as futures), which act like pointers or tickets to the actual data.
+
+4. Creation: Ray objects are typically created as return values of remote functions or actor methods, or explicitly using ray.put().
+
+5. Retrieval: The actual data of a Ray object is retrieved using ray.get() on its corresponding ObjectRef.
+
+6. Distribution: Ray manages the distribution and movement of these objects across the cluster as needed for computations.
+
+7. Garbage collection: Ray automatically manages the lifecycle of these objects, removing them when they're no longer needed.
+
+8. Size: They can range from small values to large datasets, with Ray optimizing storage and transfer based on size.
+
+In essence, Ray objects are the fundamental data units in Ray's distributed computing model, allowing efficient data sharing and management across a distributed environment.
+
+ **Ray Objects vs ObjectRefs/Futures:**
+   - Ray Objects are the actual data stored in Ray's object store.
+   - ObjectRefs (also called futures) are references to these Ray Objects.
+
+Think of it like this:
+
+- Ray Object: The actual "thing" (data, result of a computation, etc.)
+- ObjectRef/Future: A ticket or reference that lets you access that "thing"
+
+Here's a simple analogy:
+- Ray Object: A book in a library
+- ObjectRef: The library card that tells you where to find the book
+
+**Key points:**
+   - When you call a remote function, it creates a Ray Object (the result) in Ray's object store.
+   - You get back an ObjectRef, which is a reference to that Ray Object.
+   - You use ray.get() on the ObjectRef to retrieve the actual data (the Ray Object).
+
+ **Why this distinction matters:**
+   - It allows Ray to manage data efficiently across a distributed system.
+   - Ray can move the actual data (Ray Objects) around as needed without you having to manage it.
+   - You work with lightweight references (ObjectRefs) instead of potentially large data objects.
+
+ObjectRefs (or futures) are not the Ray Objects themselves, but rather references to Ray Objects. This distinction is crucial for understanding how Ray manages data in a distributed environment.
+
